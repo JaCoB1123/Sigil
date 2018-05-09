@@ -3950,7 +3950,7 @@ namespace SigilTests
 
             try
             {
-                e1.CallVirtual(null);
+                e1.CallVirtual((MethodInfo) null);
                 Assert.Fail();
             }
             catch (ArgumentNullException e)
@@ -4962,7 +4962,7 @@ namespace SigilTests
             e1.Return();
 
             e1.MarkLabel(l);
-            
+
 
             try
             {
