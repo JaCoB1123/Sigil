@@ -96,7 +96,7 @@ namespace Sigil
             }
 
             ConstructorInfo constructorInfo = emit.ConstrBuilder;
-            MethodInfo methodInfo = emit.MtdBuilder ?? (MethodInfo)emit.DynMethod;
+            var methodInfo = emit.MtdBuilder ?? (MethodInfo)emit.DynMethod;
             if (methodInfo == null && constructorInfo == null)
             {
                 throw new InvalidOperationException("emit must be building a method or constructor");

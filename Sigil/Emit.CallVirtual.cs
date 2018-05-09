@@ -1,6 +1,7 @@
 ﻿using Sigil.Impl;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -102,7 +103,7 @@ namespace Sigil
                 throw new ArgumentNullException("emit");
             }
 
-            var method = emit.MtdBuilder;
+            var method = emit.MtdBuilder ?? (MethodInfo)emit.DynMethod;
             if (method == null)
             {
                 throw new ArgumentException("Has to be a method");
