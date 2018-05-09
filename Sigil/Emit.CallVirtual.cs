@@ -125,16 +125,6 @@ namespace Sigil
 
             var expectedParams = ((LinqArray<Type>)emit.ParameterTypes).Select(s => TypeOnStack.Get(s)).ToList();
 
-            var declaring = method.DeclaringType;
-
-            if (TypeHelpers.IsValueType(declaring))
-            {
-                declaring = declaring.MakePointerType();
-            }
-
-            // "this" parameter
-            expectedParams.Insert(0, TypeOnStack.Get(declaring));
-
             if (arglist != null)
             {
                 expectedParams.AddRange(((LinqArray<Type>)arglist).Select(t => TypeOnStack.Get(t)));
