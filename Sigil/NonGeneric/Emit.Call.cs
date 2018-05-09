@@ -50,19 +50,8 @@ namespace Sigil.NonGeneric
         public Emit Call(Emit emit, Type[] arglist = null)
         {
             if (emit == null)
-            {
                 throw new ArgumentNullException("emit");
-            }
             
-            MethodInfo methodInfo = emit.InnerEmit.MtdBuilder ?? (MethodInfo)emit.InnerEmit.DynMethod;
-            if (methodInfo == null)
-            {
-                var dynMethod = new System.Reflection.Emit.DynamicMethod(emit.Name, emit.ReturnType, emit.ParameterTypes, emit.Module, skipVisibility: true);
-
-                emit.InnerEmit.DynMethod = dynMethod;
-                methodInfo = dynMethod;
-            }
-
             InnerEmit.Call(emit.InnerEmit, arglist);
             return this;
         }
