@@ -1,6 +1,7 @@
 ﻿using Sigil.Impl;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -60,8 +61,8 @@ namespace Sigil
                     //   which is the call must consume the _entire_ stack.
                     // we don't have to asset it because the return type
                     //   comparison is sufficient:
-                    //     - if the types match, the stack must be empty 
-                    //         or the following ret will fail to verify (since 
+                    //     - if the types match, the stack must be empty
+                    //         or the following ret will fail to verify (since
                     //         there's an extra item of the corret type on the stack)
                     //     - if the types _don't_ match, we've already bailed on the
                     //         tail injection
@@ -74,17 +75,17 @@ namespace Sigil
 
         /// <summary>
         /// Calls the method being constructed by the given emit.  Emits so used must have been constructed with BuildMethod or related methods.
-        /// 
+        ///
         /// Pops its arguments in reverse order (left-most deepest in the stack), and pushes the return value if it is non-void.
-        /// 
+        ///
         /// If the given method is an instance method, the `this` reference should appear before any parameters.
-        /// 
+        ///
         /// Call does not respect overrides, the implementation defined by the given MethodInfo is what will be called at runtime.
-        /// 
+        ///
         /// To call overrides of instance methods, use CallVirtual.
-        /// 
+        ///
         /// Recursive calls can only be performed with DynamicMethods, other passed in Emits must already have their methods created.
-        /// 
+        ///
         /// When calling VarArgs methods, arglist should be set to the types of the extra parameters to be passed.
         /// </summary>
         public Emit<DelegateType> Call<MethodEmit>(Emit<MethodEmit> emit, Type[] arglist = null)
@@ -94,10 +95,11 @@ namespace Sigil
                 throw new ArgumentNullException("emit");
             }
 
+            ConstructorInfo constructorInfo = emit.ConstrBuilder;
             MethodInfo methodInfo = emit.MtdBuilder ?? (MethodInfo)emit.DynMethod;
-            if (methodInfo == null)
+            if (methodInfo == null && constructorInfo == null)
             {
-                throw new InvalidOperationException("emit must be building a method");
+                throw new InvalidOperationException("emit must be building a method or constructor");
             }
 
             if (HasFlag(emit.CallingConventions, CallingConventions.VarArgs) && !HasFlag(emit.CallingConventions, CallingConventions.Standard))
@@ -116,7 +118,7 @@ namespace Sigil
             }
 
             // Instance methods expect this to preceed parameters
-            var declaring = methodInfo.DeclaringType;
+            var declaring = methodInfo?.DeclaringType;
             if (declaring != null)
             {
                 if (HasFlag(emit.CallingConventions, CallingConventions.HasThis))
@@ -155,20 +157,23 @@ namespace Sigil
                     };
             }
 
-            UpdateState(OpCodes.Call, methodInfo, emit.ParameterTypes, Wrap(transitions, "Call"), firstParamIsThis: firstParamIsThis, arglist: arglist);
+            if (methodInfo != null)
+                UpdateState(OpCodes.Call, methodInfo, emit.ParameterTypes, Wrap(transitions, "Call"), firstParamIsThis: firstParamIsThis, arglist: arglist);
+            else
+                UpdateState(OpCodes.Call, constructorInfo,  new Type[0], Wrap(transitions, "Call"));
 
             return this;
         }
 
         /// <summary>
         /// Calls the given method.  Pops its arguments in reverse order (left-most deepest in the stack), and pushes the return value if it is non-void.
-        /// 
+        ///
         /// If the given method is an instance method, the `this` reference should appear before any parameters.
-        /// 
+        ///
         /// Call does not respect overrides, the implementation defined by the given MethodInfo is what will be called at runtime.
-        /// 
+        ///
         /// To call overrides of instance methods, use CallVirtual.
-        /// 
+        ///
         /// When calling VarArgs methods, arglist should be set to the types of the extra parameters to be passed.
         /// </summary>
         public Emit<DelegateType> Call(MethodInfo method, Type[] arglist = null)
@@ -254,7 +259,7 @@ namespace Sigil
 
         /// <summary>
         /// Calls the given constructor.  Pops its arguments in reverse order (left-most deepest in the stack).
-        /// 
+        ///
         /// The `this` reference should appear before any parameters.
         /// </summary>
         public Emit<DelegateType> Call(ConstructorInfo cons)
@@ -290,7 +295,7 @@ namespace Sigil
 
             expectedParams.Insert(0, TypeOnStack.Get(declaring));
 
-            var transitions = 
+            var transitions =
                 new[]
                 {
                     new StackTransition(expectedParams.Reverse().AsEnumerable(), new TypeOnStack[0])
